@@ -241,6 +241,52 @@
   .invite-field a { color: #FFF9F1; text-decoration: none; border-bottom: 1px solid rgba(255,249,241,.5); }
   .invite-field a:hover { border-color: #FFF9F1; }
 
+  /* ---------- Kontaktformular ---------- */
+  .form-card {
+    background: var(--mg-surface);
+    border-radius: 24px;
+    padding: 2.2rem 2.2rem 2.4rem;
+    box-shadow: 0 10px 30px -14px rgba(59,46,34,.18);
+    margin-top: 1.75rem;
+  }
+  .form-card h3 {
+    font-family: "Avenir Next Rounded", "Avenir Next", sans-serif;
+    font-size: 1.3rem; font-weight: 800; margin-bottom: .5rem;
+  }
+  .form-card .form-intro { color: var(--mg-ink-muted); max-width: 60ch; margin-bottom: 0; }
+  .form-field { display: flex; flex-direction: column; gap: .4rem; margin-top: 1.15rem; }
+  .form-label, .form-field label {
+    font-size: .82rem; font-weight: 700; color: var(--mg-ink);
+  }
+  .form-field input, .form-field select, .form-field textarea {
+    font: inherit; padding: .75rem .95rem; border-radius: 12px;
+    border: 1.5px solid var(--mg-line); background: var(--mg-bg); color: var(--mg-ink);
+    width: 100%;
+  }
+  .form-field textarea { resize: vertical; min-height: 4.6rem; }
+  .form-field input:focus-visible, .form-field select:focus-visible, .form-field textarea:focus-visible {
+    outline: 2px solid var(--mg-focus); outline-offset: 2px; border-color: var(--mg-focus);
+  }
+  .form-row { display: grid; grid-template-columns: 1fr 1fr; gap: 1rem; }
+  @media (max-width: 560px) { .form-row { grid-template-columns: 1fr; } }
+  .pill-group { display: flex; gap: .6rem; flex-wrap: wrap; }
+  .pill {
+    display: inline-flex; align-items: center; gap: .45rem;
+    padding: .55rem 1.05rem; border-radius: 999px; border: 1.5px solid var(--mg-line);
+    font-size: .88rem; font-weight: 600; color: var(--mg-ink-muted); cursor: pointer;
+    transition: border-color .15s ease, background .15s ease, color .15s ease;
+  }
+  .pill input { position: absolute; opacity: 0; width: 1px; height: 1px; }
+  .pill:has(input:checked) {
+    border-color: var(--mg-accent); background: var(--mg-bg-soft); color: var(--mg-accent-deep);
+  }
+  .pill:focus-within { outline: 2px solid var(--mg-focus); outline-offset: 2px; }
+  .form-submit-row { margin-top: 1.7rem; display: flex; align-items: center; gap: 1.1rem; flex-wrap: wrap; }
+  .form-card .btn { border: none; cursor: pointer; }
+  .form-status { font-size: .88rem; font-weight: 600; }
+  .form-status[data-state="success"] { color: var(--mg-green); }
+  .form-status[data-state="error"] { color: var(--mg-accent-deep); }
+
   /* ---------- Footer / legal ---------- */
   #mg-root footer { padding: 3.5rem 0 4rem; }
   details.legal {
@@ -290,7 +336,7 @@
       <li><a class="navlink" href="#ueber-mich">Über mich</a></li>
       <li><a class="navlink" href="#kontakt">Kontakt</a></li>
     </ul>
-    <a class="btn nav-cta" href="#kontakt">Kostenlose Bewertung</a>
+    <a class="btn nav-cta" href="#kontakt">Kontakt aufnehmen</a>
   </div>
 </nav>
 
@@ -301,7 +347,7 @@
       <h1 class="headline">Gemeinsam Ihren<br><span class="warm">ersten Grundstein</span> legen</h1>
       <p class="sub">Vom ersten Grundstein bis zum Einzug begleite ich Sie durch jede Phase — Finanzierung, Renovierung, Entrümpelung, Verträge. Bei jeder Herausforderung finden wir gemeinsam eine Lösung. Sie stehen dabei nie allein da.</p>
       <div class="cta-row">
-        <a class="btn" href="#kontakt">Kostenlose Immobilienbewertung anfragen</a>
+        <a class="btn" href="#kontakt">Kontakt aufnehmen</a>
         <a class="btn-ghost" href="#leistungen">Leistungen ansehen →</a>
       </div>
       <p class="trustline">Zugelassen nach § 34c GewO · IHK Südlicher Oberrhein · Fokus Baden-Württemberg</p>
@@ -477,6 +523,68 @@
         </dl>
       </div>
     </div>
+
+    <form id="mg-contact-form" class="form-card reveal" action="https://formsubmit.co/ajax/j.schneider@mein-grundstein.de" method="POST">
+      <h3>Jetzt unverbindlich anfragen</h3>
+      <p class="form-intro">Wählen Sie Ihr Anliegen — den Rest übernehme ich. Sie erhalten innerhalb von 24 Stunden eine erste Rückmeldung von mir, und wir finden gemeinsam die beste Lösung für Ihre Immobilie.</p>
+
+      <input type="hidden" name="_subject" value="Neue Anfrage über mein-grundstein.de">
+      <input type="hidden" name="_template" value="table">
+      <input type="hidden" name="_autoresponse" value="Vielen Dank für Ihre Anfrage bei Mein Grundstein! Wir werden uns mit Ihnen innerhalb von 24 Stunden melden und Ihnen eine Antwort geben.">
+      <input type="text" name="_honey" style="position:absolute;left:-9999px" tabindex="-1" autocomplete="off" aria-hidden="true">
+
+      <div class="form-field">
+        <span class="form-label">Ihr Anliegen</span>
+        <div class="pill-group" role="radiogroup" aria-label="Ihr Anliegen">
+          <label class="pill"><input type="radio" name="Anliegen" value="Kostenlose Bewertung" checked> Bewertung</label>
+          <label class="pill"><input type="radio" name="Anliegen" value="Immobilie verkaufen"> Immobilie verkaufen</label>
+          <label class="pill"><input type="radio" name="Anliegen" value="Sonstige Anfrage"> Sonstiges</label>
+        </div>
+      </div>
+
+      <div class="form-field">
+        <label for="mg-immotyp">Art der Immobilie</label>
+        <select id="mg-immotyp" name="Immobilientyp" required>
+          <option value="" disabled selected>Bitte wählen</option>
+          <option>Einfamilienhaus</option>
+          <option>Eigentumswohnung</option>
+          <option>Mehrfamilienhaus</option>
+          <option>Grundstück</option>
+          <option>Sonstige</option>
+        </select>
+      </div>
+
+      <div class="form-field">
+        <label for="mg-adresse">Adresse bzw. Lage der Immobilie</label>
+        <input id="mg-adresse" name="Adresse" type="text" placeholder="Straße, PLZ, Ort" required>
+      </div>
+
+      <div class="form-row">
+        <div class="form-field">
+          <label for="mg-name">Ihr Name</label>
+          <input id="mg-name" name="Name" type="text" required>
+        </div>
+        <div class="form-field">
+          <label for="mg-telefon">Telefon (optional)</label>
+          <input id="mg-telefon" name="Telefon" type="tel">
+        </div>
+      </div>
+
+      <div class="form-field">
+        <label for="mg-email">Ihre E-Mail-Adresse</label>
+        <input id="mg-email" name="Email" type="email" required>
+      </div>
+
+      <div class="form-field">
+        <label for="mg-nachricht">Nachricht (optional)</label>
+        <textarea id="mg-nachricht" name="Nachricht" rows="3" placeholder="Weitere Details — z. B. Zustand, Größe, Zeitrahmen …"></textarea>
+      </div>
+
+      <div class="form-submit-row">
+        <button type="submit" class="btn">Anfrage senden</button>
+        <span id="mg-form-status" class="form-status" role="status" aria-live="polite"></span>
+      </div>
+    </form>
   </div>
 </section>
 
@@ -514,5 +622,35 @@
 
 <script>
   document.getElementById('year').textContent = new Date().getFullYear();
+
+  const mgForm = document.getElementById('mg-contact-form');
+  if (mgForm) {
+    mgForm.addEventListener('submit', async function (e) {
+      e.preventDefault();
+      const statusEl = document.getElementById('mg-form-status');
+      const submitBtn = mgForm.querySelector('button[type="submit"]');
+      statusEl.removeAttribute('data-state');
+      statusEl.textContent = '';
+      submitBtn.disabled = true;
+      submitBtn.textContent = 'Wird gesendet …';
+      try {
+        const res = await fetch(mgForm.action, {
+          method: 'POST',
+          headers: { 'Accept': 'application/json' },
+          body: new FormData(mgForm)
+        });
+        if (!res.ok) throw new Error('send failed');
+        mgForm.hidden = true;
+        statusEl.setAttribute('data-state', 'success');
+        statusEl.textContent = 'Vielen Dank! Ihre Anfrage ist angekommen — wir melden uns innerhalb von 24 Stunden bei Ihnen.';
+        statusEl.scrollIntoView({ behavior: 'smooth', block: 'center' });
+      } catch (err) {
+        statusEl.setAttribute('data-state', 'error');
+        statusEl.textContent = 'Da ist leider etwas schiefgelaufen. Bitte schreiben Sie uns direkt an j.schneider@mein-grundstein.de oder rufen Sie an: +49 152 02795566.';
+        submitBtn.disabled = false;
+        submitBtn.textContent = 'Anfrage senden';
+      }
+    });
+  }
 </script>
 </div>
