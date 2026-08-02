@@ -281,6 +281,21 @@
     border-color: var(--mg-accent); background: var(--mg-bg-soft); color: var(--mg-accent-deep);
   }
   .pill:focus-within { outline: 2px solid var(--mg-focus); outline-offset: 2px; }
+  .mg-address-wrap { position: relative; }
+  .mg-suggest-list {
+    position: absolute; z-index: 30; left: 0; right: 0; top: calc(100% + .35rem);
+    background: var(--mg-surface); border: 1.5px solid var(--mg-line); border-radius: 14px;
+    box-shadow: 0 14px 34px -14px rgba(59,46,34,.28);
+    list-style: none; margin: 0; padding: .4rem; max-height: 260px; overflow-y: auto;
+  }
+  .mg-suggest-list[hidden] { display: none; }
+  .mg-suggest-item {
+    padding: .6rem .75rem; border-radius: 10px; font-size: .92rem; color: var(--mg-ink);
+    cursor: pointer;
+  }
+  .mg-suggest-item:hover, .mg-suggest-item[aria-selected="true"] {
+    background: var(--mg-bg-soft); color: var(--mg-accent-deep);
+  }
   .form-submit-row { margin-top: 1.7rem; display: flex; align-items: center; gap: 1.1rem; flex-wrap: wrap; }
   .form-card .btn { border: none; cursor: pointer; }
   .form-status { font-size: .88rem; font-weight: 600; }
@@ -476,7 +491,7 @@
       <p class="kicker">Für Eigentümer &amp; Investoren</p>
       <h2 class="section-title display">Ein Objekt, aber nicht die Kapazitäten?</h2>
       <p class="measure" style="margin-top:1rem;">Sie haben ein Objekt oder eine Gelegenheit gefunden — aber die Mittel oder die Zeit fehlen, es selbst umzusetzen? Aufteilung, Verkauf, Vermietung, Renovierung: Ich übernehme die Kapazitäten, die Ihnen fehlen, und wir setzen es gemeinsam um.</p>
-      <a class="btn" style="margin-top:1.6rem;" href="#kontakt">Objekt vorstellen</a>
+      <a class="btn" style="margin-top:1.6rem;" href="?anliegen=partnerobjekt#kontakt">Objekt vorstellen</a>
     </div>
     <div class="partner-list">
       <div class="partner-item">
@@ -538,6 +553,7 @@
         <div class="pill-group" role="radiogroup" aria-label="Ihr Anliegen">
           <label class="pill"><input type="radio" name="Anliegen" value="Kostenlose Bewertung" checked> Bewertung</label>
           <label class="pill"><input type="radio" name="Anliegen" value="Immobilie verkaufen"> Immobilie verkaufen</label>
+          <label class="pill"><input type="radio" name="Anliegen" id="mg-anliegen-partner" value="Partnerobjekt / Investorenanfrage"> Partnerobjekt</label>
           <label class="pill"><input type="radio" name="Anliegen" value="Sonstige Anfrage"> Sonstiges</label>
         </div>
       </div>
@@ -556,7 +572,10 @@
 
       <div class="form-field">
         <label for="mg-adresse">Adresse bzw. Lage der Immobilie</label>
-        <input id="mg-adresse" name="Adresse" type="text" placeholder="Straße, PLZ, Ort" required>
+        <div class="mg-address-wrap">
+          <input id="mg-adresse" name="Adresse" type="text" placeholder="Straße, PLZ, Ort" autocomplete="off" required>
+          <ul id="mg-adresse-list" class="mg-suggest-list" role="listbox" hidden></ul>
+        </div>
       </div>
 
       <div class="form-row">
@@ -622,6 +641,113 @@
 
 <script>
   document.getElementById('year').textContent = new Date().getFullYear();
+
+  if (new URLSearchParams(location.search).get('anliegen') === 'partnerobjekt') {
+    const partnerRadio = document.getElementById('mg-anliegen-partner');
+    if (partnerRadio) partnerRadio.checked = true;
+  }
+
+  (function () {
+    const input = document.getElementById('mg-adresse');
+    const list = document.getElementById('mg-adresse-list');
+    if (!input || !list) return;
+    input.setAttribute('role', 'combobox');
+    input.setAttribute('aria-autocomplete', 'list');
+    input.setAttribute('aria-expanded', 'false');
+    input.setAttribute('aria-controls', 'mg-adresse-list');
+
+    let debounceTimer, controller, activeIndex = -1, currentItems = [];
+
+    function formatFeature(p) {
+      const streetPart = [p.street, p.housenumber].filter(Boolean).join(' ');
+      const line1 = streetPart || p.name || '';
+      const cityPart = [p.postcode, p.city || p.district].filter(Boolean).join(' ');
+      return [line1, cityPart].filter(Boolean).join(', ');
+    }
+
+    function closeList() {
+      list.hidden = true;
+      list.innerHTML = '';
+      input.setAttribute('aria-expanded', 'false');
+      input.removeAttribute('aria-activedescendant');
+      activeIndex = -1;
+      currentItems = [];
+    }
+
+    function updateActive() {
+      Array.from(list.children).forEach((li, i) => {
+        li.setAttribute('aria-selected', i === activeIndex ? 'true' : 'false');
+        if (i === activeIndex) li.scrollIntoView({ block: 'nearest' });
+      });
+      if (activeIndex >= 0) input.setAttribute('aria-activedescendant', 'mg-suggest-' + activeIndex);
+      else input.removeAttribute('aria-activedescendant');
+    }
+
+    function renderList(features) {
+      currentItems = features;
+      if (!features.length) { closeList(); return; }
+      list.innerHTML = features.map((f, i) =>
+        '<li class="mg-suggest-item" role="option" id="mg-suggest-' + i + '" aria-selected="false">' +
+        formatFeature(f.properties) + '</li>'
+      ).join('');
+      list.hidden = false;
+      input.setAttribute('aria-expanded', 'true');
+      activeIndex = -1;
+    }
+
+    function selectItem(i) {
+      const f = currentItems[i];
+      if (!f) return;
+      input.value = formatFeature(f.properties);
+      closeList();
+    }
+
+    input.addEventListener('input', () => {
+      const q = input.value.trim();
+      clearTimeout(debounceTimer);
+      if (q.length < 4) { closeList(); return; }
+      debounceTimer = setTimeout(async () => {
+        if (controller) controller.abort();
+        controller = new AbortController();
+        try {
+          const url = 'https://photon.komoot.io/api/?q=' + encodeURIComponent(q) + '&limit=5&lang=de&lat=48.66&lon=8.34';
+          const res = await fetch(url, { signal: controller.signal });
+          const data = await res.json();
+          renderList(data.features || []);
+        } catch (err) {
+          if (err.name !== 'AbortError') closeList();
+        }
+      }, 300);
+    });
+
+    list.addEventListener('mousedown', (e) => {
+      const li = e.target.closest('.mg-suggest-item');
+      if (!li) return;
+      e.preventDefault();
+      selectItem(Array.from(list.children).indexOf(li));
+    });
+
+    input.addEventListener('keydown', (e) => {
+      if (list.hidden) return;
+      if (e.key === 'ArrowDown') {
+        e.preventDefault();
+        activeIndex = Math.min(activeIndex + 1, currentItems.length - 1);
+        updateActive();
+      } else if (e.key === 'ArrowUp') {
+        e.preventDefault();
+        activeIndex = Math.max(activeIndex - 1, 0);
+        updateActive();
+      } else if (e.key === 'Enter') {
+        if (activeIndex >= 0) { e.preventDefault(); selectItem(activeIndex); }
+      } else if (e.key === 'Escape') {
+        closeList();
+      }
+    });
+
+    document.addEventListener('click', (e) => {
+      if (!e.target.closest('.mg-address-wrap')) closeList();
+    });
+  })();
 
   const mgForm = document.getElementById('mg-contact-form');
   if (mgForm) {
