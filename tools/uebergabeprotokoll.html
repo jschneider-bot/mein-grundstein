@@ -1,0 +1,341 @@
+<!DOCTYPE html>
+<html lang="de">
+<head>
+<meta charset="UTF-8">
+<title>Übergabeprotokoll — Generator</title>
+<style>
+  :root {
+    --ink: #1a1a1a;
+    --muted: #666;
+    --line: #ddd;
+    --accent: #2a5a8c;
+    --bg-soft: #f5f7fa;
+  }
+  * { box-sizing: border-box; }
+  body {
+    font-family: -apple-system, "Helvetica Neue", Arial, sans-serif;
+    background: #eef1f4;
+    margin: 0;
+    padding: 2rem;
+    color: var(--ink);
+  }
+  .app {
+    max-width: 1200px;
+    margin: 0 auto;
+    display: grid;
+    grid-template-columns: 380px 1fr;
+    gap: 1.5rem;
+  }
+  @media (max-width: 900px) {
+    .app { grid-template-columns: 1fr; }
+  }
+  .panel {
+    background: #fff;
+    border-radius: 12px;
+    padding: 1.5rem;
+    box-shadow: 0 2px 10px rgba(0,0,0,.08);
+  }
+  h1 { font-size: 1.3rem; margin: 0 0 .3rem; }
+  .hint { color: var(--muted); font-size: .85rem; margin: 0 0 1.2rem; }
+  label {
+    display: block; font-size: .82rem; font-weight: 600; margin: 1rem 0 .3rem;
+  }
+  label.first { margin-top: 0; }
+  input, textarea {
+    width: 100%; padding: .55rem .7rem; border: 1px solid var(--line);
+    border-radius: 8px; font: inherit; font-size: .92rem;
+  }
+  .row { display: grid; grid-template-columns: 1fr 1fr; gap: .8rem; }
+  .section-divider {
+    margin: 1.4rem 0 .6rem; padding-top: 1rem; border-top: 1px solid var(--line);
+    font-size: .78rem; text-transform: uppercase; letter-spacing: .04em; color: var(--muted); font-weight: 700;
+  }
+  button {
+    margin-top: 1.5rem; width: 100%; padding: .8rem; border: none; border-radius: 8px;
+    background: var(--accent); color: #fff; font-size: .95rem; font-weight: 700; cursor: pointer;
+  }
+  button:hover { background: #1e4266; }
+  button.secondary {
+    background: #fff; color: var(--accent); border: 1.5px solid var(--accent); margin-top: .6rem;
+  }
+  button.secondary:hover { background: var(--bg-soft); }
+
+  /* ---- Historie ---- */
+  #historyList { margin-top: .8rem; display: flex; flex-direction: column; gap: .5rem; }
+  .hist-empty { color: var(--muted); font-size: .82rem; }
+  .hist-item {
+    display: flex; align-items: center; justify-content: space-between; gap: .5rem;
+    border: 1px solid var(--line); border-radius: 8px; padding: .55rem .7rem;
+  }
+  .hist-info { font-size: .82rem; line-height: 1.4; }
+  .hist-info strong { display: block; font-size: .86rem; }
+  .hist-info span { color: var(--muted); }
+  .hist-actions { display: flex; gap: .3rem; flex-shrink: 0; }
+  .hist-actions button {
+    margin: 0; width: auto; padding: .35rem .6rem; font-size: .78rem; font-weight: 600;
+  }
+  .hist-actions .hist-delete { background: #fff; color: #b3401f; border: 1.5px solid #b3401f; }
+  .hist-actions .hist-delete:hover { background: #fdf1ee; }
+
+  /* ---- Dokument-Vorschau ---- */
+  #doc { background: #fff; padding: 2.5rem; }
+  #doc h2.doctitle { font-size: 1.5rem; margin: 0 0 .3rem; }
+  #doc .brand { color: var(--muted); font-size: .85rem; margin-bottom: 1.5rem; }
+  .meta p { margin: 0 0 .4rem; font-size: .92rem; }
+  .sec { margin-top: 1.6rem; }
+  .sec h3 { font-size: 1rem; margin: 0 0 .6rem; }
+  table.grid { width: 100%; border-collapse: collapse; font-size: .85rem; }
+  table.grid th, table.grid td {
+    border: 1px solid #000; padding: .4rem .55rem; text-align: left;
+  }
+  table.grid th { background: var(--bg-soft); font-size: .78rem; }
+  table.grid td.blank { height: 1.8rem; }
+  .sig-row { display: flex; gap: 3rem; margin-top: 2.5rem; }
+  .sig { flex: 1; }
+  .sig .line { border-top: 1px solid #000; margin-top: 2.5rem; padding-top: .3rem; font-size: .82rem; }
+
+  @media print {
+    body { background: #fff; padding: 0; }
+    .panel.form-panel, button { display: none !important; }
+    .app { display: block; }
+    .panel.doc-panel { box-shadow: none; padding: 0; }
+    .sec { page-break-inside: avoid; }
+  }
+</style>
+</head>
+<body>
+
+<div class="app">
+
+  <div class="panel form-panel">
+    <h1>Übergabeprotokoll</h1>
+    <p class="hint">Felder ausfüllen → „Vorschau erzeugen" → „Drucken / Als PDF speichern". Die Tabellen (Zustand, Zähler, Schlüssel) bleiben bewusst leer zum Vor-Ort-Ausfüllen.</p>
+
+    <label class="first">Vermieter / Verkäufer (Name)</label>
+    <input id="vermieter" placeholder="z. B. Eigentümername">
+
+    <label>Mieter / Käufer (Name/n)</label>
+    <input id="mieter" placeholder="z. B. Max Mustermann">
+
+    <label>Adresse des Miet-/Kaufobjekts</label>
+    <textarea id="objektAdresse" placeholder="Straße Nr., PLZ Ort" rows="2"></textarea>
+
+    <div class="section-divider">Übergabe</div>
+
+    <label class="first">Datum der Übergabe</label>
+    <input id="datum" type="date">
+
+    <div class="row">
+      <div>
+        <label>Von (Uhrzeit)</label>
+        <input id="vonUhr" type="time">
+      </div>
+      <div>
+        <label>Bis (Uhrzeit)</label>
+        <input id="bisUhr" type="time">
+      </div>
+    </div>
+
+    <label>Zeuge (optional)</label>
+    <input id="zeuge" placeholder="Name des Zeugen">
+
+    <button id="btnGenerate">Vorschau erzeugen</button>
+    <button class="secondary" id="btnSave">In Historie speichern</button>
+    <button class="secondary" id="btnPrint">Drucken / Als PDF speichern</button>
+
+    <div class="section-divider">Gespeicherte Protokolle</div>
+    <div id="historyList"></div>
+  </div>
+
+  <div class="panel doc-panel">
+    <div id="doc">
+      <p class="hint">Noch keine Vorschau erzeugt. Formular links ausfüllen und auf „Vorschau erzeugen" klicken.</p>
+    </div>
+  </div>
+
+</div>
+
+<script>
+  const $ = (id) => document.getElementById(id);
+  const STORAGE_KEY = 'mg_uebergabeprotokolle_v1';
+
+  $('datum').valueAsDate = new Date();
+
+  function formatDatum(iso) {
+    if (!iso) return '';
+    const [y, m, d] = iso.split('-');
+    return `${d}.${m}.${y}`;
+  }
+
+  function collectFormData() {
+    return {
+      vermieter: $('vermieter').value.trim(),
+      mieter: $('mieter').value.trim(),
+      objektAdresse: $('objektAdresse').value.trim(),
+      datum: $('datum').value,
+      vonUhr: $('vonUhr').value,
+      bisUhr: $('bisUhr').value,
+      zeuge: $('zeuge').value.trim()
+    };
+  }
+
+  function fillForm(data) {
+    $('vermieter').value = data.vermieter || '';
+    $('mieter').value = data.mieter || '';
+    $('objektAdresse').value = data.objektAdresse || '';
+    $('datum').value = data.datum || '';
+    $('vonUhr').value = data.vonUhr || '';
+    $('bisUhr').value = data.bisUhr || '';
+    $('zeuge').value = data.zeuge || '';
+  }
+
+  const raeume = ['Flur / Diele', 'Bad / WC', 'WC', 'Wohnzimmer', 'Schlafzimmer', 'Zimmer 3', 'Zimmer 4', 'Balkon', 'Keller', 'Garage / Carport', 'Küche', 'Sonstige'];
+  const zaehler = ['Strom HT', 'Strom NT', 'Gas', 'Wasser warm', 'Wasser kalt', 'Heizung / Zwischenablesung'];
+  const schluessel = ['Hausschlüssel', 'Briefkastenschlüssel', 'Wohnungsschlüssel', 'Kellerschlüssel', 'Sonstige'];
+
+  function renderDocument(data) {
+    const vermieter = data.vermieter || '_____________________';
+    const mieter = data.mieter || '[Mieter/Käufer]';
+    const objekt = data.objektAdresse || '[Objekt-Adresse]';
+    const datum = formatDatum(data.datum) || '_____________________';
+    const von = data.vonUhr || '_____';
+    const bis = data.bisUhr || '_____';
+
+    const raeumeRows = raeume.map(r => `
+      <tr><td>${r}</td><td class="blank"></td><td class="blank"></td></tr>
+    `).join('');
+
+    const zaehlerRows = zaehler.map(z => `
+      <tr><td>${z}</td><td class="blank"></td><td class="blank"></td></tr>
+    `).join('');
+
+    const heizkostenRows = Array.from({ length: 10 }, (_, i) => `
+      <tr><td>${i + 1}</td><td class="blank"></td><td class="blank"></td></tr>
+    `).join('');
+
+    const schluesselRows = schluessel.map(s => `
+      <tr><td>${s}</td><td class="blank"></td><td class="blank"></td></tr>
+    `).join('');
+
+    $('doc').innerHTML = `
+      <h2 class="doctitle">Übergabeprotokoll</h2>
+      <div class="brand">Immo-Service Schneider · Simon-Bruder-Straße 1 · 77767 Appenweier</div>
+
+      <div class="meta">
+        <p><strong>Name der/des Mieter(s)/Käufer(s):</strong> ${mieter}</p>
+        <p><strong>Adresse des Miet-/Kaufobjekts:</strong> ${objekt}</p>
+        <p><strong>Die Wohnungsübergabe fand am:</strong> ${datum} &nbsp; <strong>Von:</strong> ${von} Uhr <strong>bis:</strong> ${bis} Uhr</p>
+      </div>
+
+      <div class="sec">
+        <h3>Zustand der Räume</h3>
+        <table class="grid">
+          <tr><th>Raum</th><th>Keine Mängel</th><th>Anmerkungen / Mängel festgestellt</th></tr>
+          ${raeumeRows}
+        </table>
+      </div>
+
+      <div class="sec">
+        <h3>Zählerstände</h3>
+        <table class="grid">
+          <tr><th>Zählerart</th><th>Zählernummer</th><th>Stand</th></tr>
+          ${zaehlerRows}
+        </table>
+      </div>
+
+      <div class="sec">
+        <h3>Elektronische Heizkostenverteiler (falls vorhanden)</h3>
+        <table class="grid">
+          <tr><th style="width:8%">Nr.</th><th>Gerätenummer</th><th>Stand</th></tr>
+          ${heizkostenRows}
+        </table>
+      </div>
+
+      <div class="sec">
+        <h3>Schlüssel</h3>
+        <table class="grid">
+          <tr><th>Schlüsselart</th><th>Anzahl</th><th>Fehlt noch / Anmerkungen</th></tr>
+          ${schluesselRows}
+        </table>
+      </div>
+
+      <div class="sec">
+        <p><strong>Datum der letzten Renovierungsarbeiten:</strong> _____________________</p>
+        ${data.zeuge ? `<p><strong>Zeuge(n):</strong> ${data.zeuge}</p>` : `<p><strong>Zeuge(n):</strong> _____________________</p>`}
+      </div>
+
+      <div class="sig-row">
+        <div class="sig">
+          <div>Ort, Datum: ${datum}</div>
+          <div class="line">${vermieter} (Vermieter / Verkäufer)</div>
+        </div>
+        <div class="sig">
+          <div>Ort, Datum: _____________________</div>
+          <div class="line">${mieter} (Mieter / Käufer)</div>
+        </div>
+      </div>
+    `;
+  }
+
+  $('btnGenerate').addEventListener('click', () => renderDocument(collectFormData()));
+  $('btnPrint').addEventListener('click', () => window.print());
+
+  /* ---- Historie (localStorage) ---- */
+  function loadHistory() {
+    try { return JSON.parse(localStorage.getItem(STORAGE_KEY)) || []; }
+    catch (e) { return []; }
+  }
+  function saveHistory(list) { localStorage.setItem(STORAGE_KEY, JSON.stringify(list)); }
+
+  function renderHistoryList() {
+    const list = loadHistory();
+    const container = $('historyList');
+    if (!list.length) {
+      container.innerHTML = '<p class="hist-empty">Noch keine gespeicherten Protokolle.</p>';
+      return;
+    }
+    container.innerHTML = list.slice().reverse().map(entry => `
+      <div class="hist-item" data-id="${entry.id}">
+        <div class="hist-info">
+          <strong>${entry.data.mieter || '(ohne Namen)'}</strong>
+          <span>${entry.data.objektAdresse || ''} — ${formatDatum(entry.data.datum) || ''}</span>
+        </div>
+        <div class="hist-actions">
+          <button class="hist-load">Öffnen</button>
+          <button class="hist-delete">×</button>
+        </div>
+      </div>
+    `).join('');
+
+    container.querySelectorAll('.hist-item').forEach(item => {
+      const id = item.getAttribute('data-id');
+      item.querySelector('.hist-load').addEventListener('click', () => {
+        const entry = loadHistory().find(e => e.id === id);
+        if (entry) { fillForm(entry.data); renderDocument(entry.data); window.scrollTo(0, 0); }
+      });
+      item.querySelector('.hist-delete').addEventListener('click', () => {
+        if (!confirm('Dieses gespeicherte Protokoll wirklich löschen?')) return;
+        saveHistory(loadHistory().filter(e => e.id !== id));
+        renderHistoryList();
+      });
+    });
+  }
+
+  $('btnSave').addEventListener('click', () => {
+    const data = collectFormData();
+    if (!data.mieter || !data.objektAdresse) {
+      alert('Bitte mindestens Mieter/Käufer und Objekt-Adresse eintragen, bevor du speicherst.');
+      return;
+    }
+    const list = loadHistory();
+    list.push({ id: Date.now().toString(36) + Math.random().toString(36).slice(2, 7), savedAt: new Date().toISOString(), data });
+    saveHistory(list);
+    renderHistoryList();
+    renderDocument(data);
+  });
+
+  renderHistoryList();
+</script>
+
+</body>
+</html>
