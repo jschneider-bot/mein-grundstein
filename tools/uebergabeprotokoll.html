@@ -72,6 +72,16 @@
   .suggest-item { padding: .5rem .6rem; border-radius: 6px; font-size: .86rem; cursor: pointer; }
   .suggest-item:hover, .suggest-item[aria-selected="true"] { background: var(--bg-soft); color: var(--accent); }
 
+  /* ---- Art der Uebergabe (Pillen) ---- */
+  .pill-group { display: flex; gap: .5rem; }
+  .pill {
+    flex: 1; display: flex; align-items: center; justify-content: center; gap: .4rem;
+    padding: .55rem .7rem; border-radius: 999px; border: 1.5px solid var(--line);
+    font-size: .85rem; font-weight: 600; color: var(--muted); cursor: pointer; text-align: center;
+  }
+  .pill input { position: absolute; opacity: 0; width: 1px; height: 1px; }
+  .pill:has(input:checked) { border-color: var(--accent); background: var(--bg-soft); color: var(--accent); }
+
   /* ---- Historie ---- */
   #historyList { margin-top: .8rem; display: flex; flex-direction: column; gap: .5rem; }
   .hist-empty { color: var(--muted); font-size: .82rem; }
@@ -123,10 +133,16 @@
     <h1>Übergabeprotokoll</h1>
     <p class="hint">Felder ausfüllen → „Vorschau erzeugen" → „Drucken / Als PDF speichern". Die Tabellen (Zustand, Zähler, Schlüssel) bleiben bewusst leer zum Vor-Ort-Ausfüllen.</p>
 
-    <label class="first">Vermieter / Verkäufer (Name)</label>
+    <div class="section-divider">Art der Übergabe</div>
+    <div class="pill-group" role="radiogroup" aria-label="Art der Übergabe">
+      <label class="pill"><input type="radio" name="art" value="miete" checked> Mietübergabe</label>
+      <label class="pill"><input type="radio" name="art" value="kauf"> Kaufübergabe</label>
+    </div>
+
+    <label class="first" id="labelGeber">Vermieter (Name)</label>
     <input id="vermieter" placeholder="z. B. Eigentümername">
 
-    <label>Mieter / Käufer (Name/n)</label>
+    <label id="labelNehmer">Mieter (Name/n)</label>
     <input id="mieter" placeholder="z. B. Max Mustermann">
 
     <label>Adresse des Miet-/Kaufobjekts</label>
@@ -178,6 +194,18 @@
     const [y, m, d] = iso.split('-');
     return `${d}.${m}.${y}`;
   }
+
+  function getArt() {
+    const checked = document.querySelector('input[name="art"]:checked');
+    return checked ? checked.value : 'miete';
+  }
+  function updateArtLabels() {
+    const isKauf = getArt() === 'kauf';
+    $('labelGeber').textContent = isKauf ? 'Verkäufer (Name)' : 'Vermieter (Name)';
+    $('labelNehmer').textContent = isKauf ? 'Käufer (Name/n)' : 'Mieter (Name/n)';
+  }
+  document.querySelectorAll('input[name="art"]').forEach(r => r.addEventListener('change', updateArtLabels));
+  updateArtLabels();
 
   (function () {
     const input = $('objektAdresse');
@@ -268,6 +296,7 @@
 
   function collectFormData() {
     return {
+      art: getArt(),
       vermieter: $('vermieter').value.trim(),
       mieter: $('mieter').value.trim(),
       objektAdresse: $('objektAdresse').value.trim(),
@@ -278,6 +307,9 @@
   }
 
   function fillForm(data) {
+    const artRadio = document.querySelector(`input[name="art"][value="${data.art === 'kauf' ? 'kauf' : 'miete'}"]`);
+    if (artRadio) artRadio.checked = true;
+    updateArtLabels();
     $('vermieter').value = data.vermieter || '';
     $('mieter').value = data.mieter || '';
     $('objektAdresse').value = data.objektAdresse || '';
@@ -291,8 +323,11 @@
   const schluessel = ['Hausschlüssel', 'Briefkastenschlüssel', 'Wohnungsschlüssel', 'Kellerschlüssel', 'Sonstige'];
 
   function renderDocument(data) {
+    const isKauf = data.art === 'kauf';
+    const rolleGeber = isKauf ? 'Verkäufer' : 'Vermieter';
+    const rolleNehmer = isKauf ? 'Käufer' : 'Mieter';
     const vermieter = data.vermieter || '_____________________';
-    const mieter = data.mieter || '[Mieter/Käufer]';
+    const mieter = data.mieter || `[${rolleNehmer}]`;
     const objekt = data.objektAdresse || '[Objekt-Adresse]';
     const datum = formatDatum(data.datum) || '_____________________';
     const von = data.vonUhr || '_____';
@@ -315,11 +350,11 @@
     `).join('');
 
     $('doc').innerHTML = `
-      <h2 class="doctitle">Übergabeprotokoll</h2>
+      <h2 class="doctitle">Übergabeprotokoll (${isKauf ? 'Kaufübergabe' : 'Mietübergabe'})</h2>
 
       <div class="meta">
-        <p><strong>Name der/des Mieter(s)/Käufer(s):</strong> ${mieter}</p>
-        <p><strong>Adresse des Miet-/Kaufobjekts:</strong> ${objekt}</p>
+        <p><strong>Name der/des ${rolleNehmer}(s):</strong> ${mieter}</p>
+        <p><strong>Adresse des Objekts:</strong> ${objekt}</p>
         <p><strong>Die Wohnungsübergabe fand am:</strong> ${datum} &nbsp; <strong>Von:</strong> ${von} Uhr <strong>bis:</strong> ${bis} Uhr</p>
       </div>
 
@@ -358,11 +393,11 @@
       <div class="sig-row">
         <div class="sig">
           <div>Ort, Datum: ${datum}</div>
-          <div class="line">${vermieter} (Vermieter / Verkäufer)</div>
+          <div class="line">${vermieter} (${rolleGeber})</div>
         </div>
         <div class="sig">
           <div>Ort, Datum: _____________________</div>
-          <div class="line">${mieter} (Mieter / Käufer)</div>
+          <div class="line">${mieter} (${rolleNehmer})</div>
         </div>
       </div>
     `;
