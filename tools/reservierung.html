@@ -1,0 +1,404 @@
+<!DOCTYPE html>
+<html lang="de">
+<head>
+<meta charset="UTF-8">
+<title>Reservierungsvereinbarung — Generator</title>
+<style>
+  :root {
+    --ink: #1a1a1a;
+    --muted: #666;
+    --line: #ddd;
+    --accent: #2a5a8c;
+    --bg-soft: #f5f7fa;
+  }
+  * { box-sizing: border-box; }
+  body {
+    font-family: -apple-system, "Helvetica Neue", Arial, sans-serif;
+    background: #eef1f4;
+    margin: 0;
+    padding: 2rem;
+    color: var(--ink);
+  }
+  .app {
+    max-width: 1200px;
+    margin: 0 auto;
+    display: grid;
+    grid-template-columns: 380px 1fr;
+    gap: 1.5rem;
+  }
+  @media (max-width: 900px) {
+    .app { grid-template-columns: 1fr; }
+  }
+  .panel {
+    background: #fff;
+    border-radius: 12px;
+    padding: 1.5rem;
+    box-shadow: 0 2px 10px rgba(0,0,0,.08);
+  }
+  h1 { font-size: 1.3rem; margin: 0 0 .3rem; }
+  .hint { color: var(--muted); font-size: .85rem; margin: 0 0 1.2rem; }
+  label {
+    display: block; font-size: .82rem; font-weight: 600; margin: 1rem 0 .3rem;
+  }
+  label.first { margin-top: 0; }
+  input, textarea {
+    width: 100%; padding: .55rem .7rem; border: 1px solid var(--line);
+    border-radius: 8px; font: inherit; font-size: .92rem;
+  }
+  textarea { resize: vertical; min-height: 3.2rem; }
+  .row { display: grid; grid-template-columns: 1fr 1fr; gap: .8rem; }
+  .section-divider {
+    margin: 1.4rem 0 .6rem; padding-top: 1rem; border-top: 1px solid var(--line);
+    font-size: .78rem; text-transform: uppercase; letter-spacing: .04em; color: var(--muted); font-weight: 700;
+  }
+  .checkbox-row { display: flex; align-items: center; gap: .5rem; margin-top: 1rem; }
+  .checkbox-row input { width: auto; }
+  .checkbox-row label { margin: 0; }
+  button {
+    margin-top: 1.5rem; width: 100%; padding: .8rem; border: none; border-radius: 8px;
+    background: var(--accent); color: #fff; font-size: .95rem; font-weight: 700; cursor: pointer;
+  }
+  button:hover { background: #1e4266; }
+  button.secondary {
+    background: #fff; color: var(--accent); border: 1.5px solid var(--accent); margin-top: .6rem;
+  }
+  button.secondary:hover { background: var(--bg-soft); }
+
+  /* ---- Historie ---- */
+  #historyList { margin-top: .8rem; display: flex; flex-direction: column; gap: .5rem; }
+  .hist-empty { color: var(--muted); font-size: .82rem; }
+  .hist-item {
+    display: flex; align-items: center; justify-content: space-between; gap: .5rem;
+    border: 1px solid var(--line); border-radius: 8px; padding: .55rem .7rem;
+  }
+  .hist-info { font-size: .82rem; line-height: 1.4; }
+  .hist-info strong { display: block; font-size: .86rem; }
+  .hist-info span { color: var(--muted); }
+  .hist-actions { display: flex; gap: .3rem; flex-shrink: 0; }
+  .hist-actions button {
+    margin: 0; width: auto; padding: .35rem .6rem; font-size: .78rem; font-weight: 600;
+  }
+  .hist-actions .hist-delete { background: #fff; color: #b3401f; border: 1.5px solid #b3401f; }
+  .hist-actions .hist-delete:hover { background: #fdf1ee; }
+
+  /* ---- Dokument-Vorschau ---- */
+  #doc {
+    background: #fff; padding: 2.5rem;
+  }
+  #doc h2.doctitle { font-size: 1.5rem; margin: 0 0 1.5rem; }
+  .boxes { display: flex; gap: 1rem; margin-bottom: 1.5rem; }
+  .box { flex: 1; border: 1px solid #000; padding: .7rem .9rem; font-size: .88rem; }
+  .box .label { font-weight: 700; font-size: .78rem; margin-bottom: .4rem; }
+  .sec { margin-bottom: 1.3rem; }
+  .sec h3 { font-size: .95rem; margin: 0 0 .4rem; }
+  .sec p { margin: 0 0 .3rem; font-size: .88rem; line-height: 1.5; }
+  .sig-row { display: flex; gap: 3rem; margin-top: 2.5rem; }
+  .sig { flex: 1; }
+  .sig .line { border-top: 1px solid #000; margin-top: 2.5rem; padding-top: .3rem; font-size: .82rem; }
+
+  @media print {
+    body { background: #fff; padding: 0; }
+    .panel.form-panel, button { display: none !important; }
+    .app { display: block; }
+    .panel.doc-panel { box-shadow: none; padding: 0; }
+  }
+</style>
+</head>
+<body>
+
+<div class="app">
+
+  <div class="panel form-panel">
+    <h1>Reservierungsvereinbarung</h1>
+    <p class="hint">Felder ausfüllen → „Vorschau erzeugen" → „Drucken / Als PDF speichern".</p>
+
+    <label class="first">Käufer (Name/n)</label>
+    <input id="kaeuferName" placeholder="Goran Petrovic, Anamarija Petrovic">
+
+    <label>Adresse des Käufers</label>
+    <textarea id="kaeuferAdresse" placeholder="Waldfeldstr. 3&#10;77880 Sasbach"></textarea>
+
+    <label>Datum</label>
+    <input id="datum" type="date">
+
+    <div class="section-divider">Objekt</div>
+
+    <label class="first">Objekt-Adresse / Bezeichnung</label>
+    <textarea id="objektAdresse" placeholder="Eigentumswohnung Nr. 1 (EG links), Sasbacher Str. 15, 77855 Achern"></textarea>
+
+    <label>Kaufpreis (EUR)</label>
+    <input id="kaufpreis" type="number" placeholder="275000">
+
+    <div class="section-divider">Reservierung</div>
+
+    <label class="first">Reservierungsdauer (Wochen)</label>
+    <input id="dauer" type="number" value="4">
+
+    <div class="checkbox-row">
+      <input id="mitAnzahlung" type="checkbox">
+      <label>Es wird eine Anzahlung geleistet</label>
+    </div>
+
+    <div id="anzahlungFeld" style="display:none;">
+      <label>Anzahlung (EUR)</label>
+      <input id="anzahlung" type="number" placeholder="500">
+      <p id="anzahlungWarnung" style="display:none; color:#b3401f; font-size:.8rem; margin:.4rem 0 0;"></p>
+      <label>Verwendungszweck-Kurzform (für Überweisung)</label>
+      <input id="verwendungszweck" placeholder="Reservierung Sasbacher Str. 15, Achern">
+    </div>
+
+    <div class="section-divider">Maklerprovision</div>
+
+    <label class="first">Provisionssatz (%)</label>
+    <input id="satz" type="number" step="0.1" value="2.5">
+
+    <button id="btnGenerate">Vorschau erzeugen</button>
+    <button class="secondary" id="btnSave">In Historie speichern</button>
+    <button class="secondary" id="btnPrint">Drucken / Als PDF speichern</button>
+
+    <div class="section-divider">Gespeicherte Reservierungen</div>
+    <div id="historyList"></div>
+  </div>
+
+  <div class="panel doc-panel">
+    <div id="doc">
+      <p class="hint">Noch keine Vorschau erzeugt. Formular links ausfüllen und auf „Vorschau erzeugen" klicken.</p>
+    </div>
+  </div>
+
+</div>
+
+<script>
+  const $ = (id) => document.getElementById(id);
+  const STORAGE_KEY = 'mg_reservierungen_v1';
+
+  $('datum').valueAsDate = new Date();
+
+  $('mitAnzahlung').addEventListener('change', () => {
+    $('anzahlungFeld').style.display = $('mitAnzahlung').checked ? 'block' : 'none';
+    checkAnzahlungGrenze();
+  });
+  $('anzahlung').addEventListener('input', checkAnzahlungGrenze);
+  $('kaufpreis').addEventListener('input', checkAnzahlungGrenze);
+  $('satz').addEventListener('input', checkAnzahlungGrenze);
+
+  function euro(n) {
+    return Number(n).toLocaleString('de-DE', { minimumFractionDigits: 2, maximumFractionDigits: 2 });
+  }
+  function formatDatum(iso) {
+    if (!iso) return '';
+    const [y, m, d] = iso.split('-');
+    return `${d}.${m}.${y}`;
+  }
+
+  function checkAnzahlungGrenze() {
+    const kaufpreis = parseFloat($('kaufpreis').value) || 0;
+    const satz = parseFloat($('satz').value) || 0;
+    const anzahlung = parseFloat($('anzahlung').value) || 0;
+    const provision = kaufpreis * satz / 100;
+    const grenze = provision * 0.10;
+    const warn = $('anzahlungWarnung');
+    if (provision > 0 && anzahlung > grenze) {
+      warn.style.display = 'block';
+      warn.textContent = `⚠ Achtung: ${euro(anzahlung)} EUR übersteigen 10 % der Provision (${euro(grenze)} EUR). Laut Rechtsprechung riskiert eine zu hohe Anzahlung die Formnichtigkeit der gesamten Vereinbarung — bitte reduzieren.`;
+    } else {
+      warn.style.display = 'none';
+    }
+  }
+
+  function collectFormData() {
+    return {
+      kaeuferName: $('kaeuferName').value.trim(),
+      kaeuferAdresse: $('kaeuferAdresse').value.trim(),
+      datum: $('datum').value,
+      objektAdresse: $('objektAdresse').value.trim(),
+      kaufpreis: $('kaufpreis').value,
+      dauer: $('dauer').value,
+      mitAnzahlung: $('mitAnzahlung').checked,
+      anzahlung: $('anzahlung').value,
+      verwendungszweck: $('verwendungszweck').value.trim(),
+      satz: $('satz').value
+    };
+  }
+
+  function fillForm(data) {
+    $('kaeuferName').value = data.kaeuferName || '';
+    $('kaeuferAdresse').value = data.kaeuferAdresse || '';
+    $('datum').value = data.datum || '';
+    $('objektAdresse').value = data.objektAdresse || '';
+    $('kaufpreis').value = data.kaufpreis || '';
+    $('dauer').value = data.dauer || 4;
+    $('mitAnzahlung').checked = !!data.mitAnzahlung;
+    $('anzahlungFeld').style.display = data.mitAnzahlung ? 'block' : 'none';
+    $('anzahlung').value = data.anzahlung || '';
+    $('verwendungszweck').value = data.verwendungszweck || '';
+    $('satz').value = data.satz || 2.5;
+    checkAnzahlungGrenze();
+  }
+
+  function renderDocument(data) {
+    const kaeufer = data.kaeuferName || '[Käufer]';
+    const kaeuferAdr = (data.kaeuferAdresse || '').split('\n').filter(Boolean);
+    const datum = formatDatum(data.datum);
+    const objekt = data.objektAdresse || '[Objekt-Adresse]';
+    const kaufpreis = parseFloat(data.kaufpreis) || 0;
+    const dauer = data.dauer || '4';
+    const mitAnzahlung = !!data.mitAnzahlung;
+    const anzahlung = parseFloat(data.anzahlung) || 0;
+    const verwendungszweck = data.verwendungszweck || `Reservierung ${objekt}`;
+    const satz = parseFloat(data.satz) || 0;
+    const provision = kaufpreis * satz / 100;
+
+    let anzahlungHtml = '';
+    if (mitAnzahlung && anzahlung > 0) {
+      anzahlungHtml = `
+        <div class="sec">
+          <h3>Anzahlung</h3>
+          <p>Die Käufer leisten eine Anzahlung in Höhe von ${euro(anzahlung)} EUR, die auf die im Erfolgsfall nach Ziffer „Maklerauftrag / Maklerprovision" geschuldete Maklerprovision angerechnet wird. Diese Anzahlung wird nicht als pauschale, erfolgsunabhängige Gebühr erhoben. Kommt der Kauf — gleich aus welchem Grund — nicht zustande, wird die Anzahlung vollständig an die Käufer zurückerstattet, es sei denn, die Käufer sind gemäß der Regelung zur Beauftragung des Notarentwurfs zur Kostentragung verpflichtet.</p>
+        </div>
+        <div class="sec">
+          <h3>Zahlungsanweisung</h3>
+          <p>Kontoinhaber: Immo-Service Schneider / Jonas Schneider<br>
+          Bank: Volksbank Bühl<br>
+          IBAN: DE27 6629 1400 0005 3599 70<br>
+          Verwendungszweck: ${verwendungszweck}<br>
+          Betrag: ${euro(anzahlung)} EUR</p>
+        </div>`;
+    }
+
+    $('doc').innerHTML = `
+      <h2 class="doctitle">Reservierungsbestätigung</h2>
+      <div class="boxes">
+        <div class="box">
+          <div class="label">MAKLER / VERMITTLER</div>
+          Immo-Service Schneider<br>Simon-Bruder-Straße 1<br>77767 Appenweier
+        </div>
+        <div class="box">
+          <div class="label">KÄUFER</div>
+          ${kaeufer}<br>${kaeuferAdr.join('<br>')}
+        </div>
+      </div>
+
+      <div class="sec">
+        <h3>Kaufobjekt</h3>
+        <p>${objekt}</p>
+      </div>
+
+      <div class="sec">
+        <h3>Kaufpreis</h3>
+        <p>Vereinbarter Kaufpreis: ${euro(kaufpreis)} EUR<br>
+        Der Kaufpreis wird hiermit von beiden Parteien bestätigt.</p>
+      </div>
+
+      <div class="sec">
+        <h3>Reservierung</h3>
+        <p>Das oben genannte Objekt wird für die Käufer für die Dauer von ${dauer} Wochen reserviert. Diese Zeit steht Ihnen für die weiteren Schritte bis zur Beurkundung zur Verfügung. Diese Reservierung stellt noch keinen Kaufvertrag dar. Sollte der Kauf dennoch nicht zustande kommen, endet die Reservierung automatisch, ohne dass daraus Ansprüche gegenüber Immo-Service Schneider entstehen.</p>
+      </div>
+
+      ${anzahlungHtml}
+
+      <div class="sec">
+        <h3>Beauftragung des Notarentwurfs</h3>
+        <p>Mit dieser Reservierung beauftragen die Käufer zugleich die Erstellung eines Kaufvertragsentwurfs durch den Notar. Sollten die Käufer aus persönlichen Gründen von diesem Vorhaben zurücktreten, nicht mehr erreichbar sein oder aus anderen, von Immo-Service Schneider nicht zu vertretenden Gründen von der Reservierung zurücktreten, tragen die Käufer die hierfür entstehenden Notarkosten und begleichen die entsprechende Rechnung.</p>
+      </div>
+
+      <div class="sec">
+        <h3>Maklerauftrag / Maklerprovision</h3>
+        <p>Immo-Service Schneider wird mit dieser Vereinbarung ausdrücklich als Makler der Käufer tätig und macht hiermit in Textform gemäß § 656a BGB ein ausdrückliches Provisionsverlangen geltend. Die Käufer beauftragen Immo-Service Schneider mit der Begleitung des Kaufs der oben genannten Immobilie. Dies umfasst insbesondere die Begleitung der Finanzierung, die Beschaffung der erforderlichen Unterlagen sowie die Sicherstellung eines reibungslosen Ablaufs bis zur Beurkundung. Für diese Leistungen fällt eine Maklerprovision (Außenprovision) in Höhe von ${satz} % des Kaufpreises (${euro(provision)} EUR) an, die die Käufer an Immo-Service Schneider zu zahlen haben. Diese Provisionspflicht besteht unabhängig davon, ob zwischen Immo-Service Schneider und der Verkäuferseite eine Provisionsvereinbarung besteht.</p>
+      </div>
+
+      <div class="sec">
+        <p><em>Mit ihrer Unterschrift bestätigen die Käufer den Erhalt dieser Vereinbarung sowie ihr Einverständnis mit den vorgenannten Bedingungen, insbesondere der Maklerprovision.</em></p>
+      </div>
+
+      <div class="sig-row">
+        <div class="sig">
+          <div>Ort, Datum: ${datum || '_____________________'}</div>
+          <div class="line">Immo-Service Schneider</div>
+        </div>
+        <div class="sig">
+          <div>Ort, Datum: _____________________</div>
+          <div class="line">${kaeufer} (Unterschrift${kaeufer.includes(',') ? 'en' : ''})</div>
+        </div>
+      </div>
+    `;
+  }
+
+  $('btnGenerate').addEventListener('click', () => {
+    renderDocument(collectFormData());
+  });
+
+  $('btnPrint').addEventListener('click', () => window.print());
+
+  /* ---- Historie (localStorage) ---- */
+  function loadHistory() {
+    try {
+      return JSON.parse(localStorage.getItem(STORAGE_KEY)) || [];
+    } catch (e) {
+      return [];
+    }
+  }
+  function saveHistory(list) {
+    localStorage.setItem(STORAGE_KEY, JSON.stringify(list));
+  }
+  function renderHistoryList() {
+    const list = loadHistory();
+    const container = $('historyList');
+    if (!list.length) {
+      container.innerHTML = '<p class="hist-empty">Noch keine gespeicherten Reservierungen.</p>';
+      return;
+    }
+    container.innerHTML = list.slice().reverse().map(entry => `
+      <div class="hist-item" data-id="${entry.id}">
+        <div class="hist-info">
+          <strong>${entry.data.kaeuferName || '(ohne Namen)'}</strong>
+          <span>${entry.data.objektAdresse || ''} — ${formatDatum(entry.data.datum) || ''}</span>
+        </div>
+        <div class="hist-actions">
+          <button class="hist-load">Öffnen</button>
+          <button class="hist-delete">×</button>
+        </div>
+      </div>
+    `).join('');
+
+    container.querySelectorAll('.hist-item').forEach(item => {
+      const id = item.getAttribute('data-id');
+      item.querySelector('.hist-load').addEventListener('click', () => {
+        const entry = loadHistory().find(e => e.id === id);
+        if (entry) {
+          fillForm(entry.data);
+          renderDocument(entry.data);
+          window.scrollTo(0, 0);
+        }
+      });
+      item.querySelector('.hist-delete').addEventListener('click', () => {
+        if (!confirm('Diese gespeicherte Reservierung wirklich löschen?')) return;
+        const updated = loadHistory().filter(e => e.id !== id);
+        saveHistory(updated);
+        renderHistoryList();
+      });
+    });
+  }
+
+  $('btnSave').addEventListener('click', () => {
+    const data = collectFormData();
+    if (!data.kaeuferName || !data.objektAdresse) {
+      alert('Bitte mindestens Käufer und Objekt-Adresse eintragen, bevor du speicherst.');
+      return;
+    }
+    const list = loadHistory();
+    list.push({
+      id: Date.now().toString(36) + Math.random().toString(36).slice(2, 7),
+      savedAt: new Date().toISOString(),
+      data
+    });
+    saveHistory(list);
+    renderHistoryList();
+    renderDocument(data);
+  });
+
+  renderHistoryList();
+</script>
+
+</body>
+</html>
