@@ -60,6 +60,18 @@
   }
   button.secondary:hover { background: var(--bg-soft); }
 
+  /* ---- Adress-Suche ---- */
+  .address-wrap { position: relative; }
+  .suggest-list {
+    position: absolute; z-index: 30; left: 0; right: 0; top: calc(100% + .3rem);
+    background: #fff; border: 1px solid var(--line); border-radius: 8px;
+    box-shadow: 0 10px 26px -12px rgba(0,0,0,.28);
+    list-style: none; margin: 0; padding: .3rem; max-height: 220px; overflow-y: auto;
+  }
+  .suggest-list[hidden] { display: none; }
+  .suggest-item { padding: .5rem .6rem; border-radius: 6px; font-size: .86rem; cursor: pointer; }
+  .suggest-item:hover, .suggest-item[aria-selected="true"] { background: var(--bg-soft); color: var(--accent); }
+
   /* ---- Historie ---- */
   #historyList { margin-top: .8rem; display: flex; flex-direction: column; gap: .5rem; }
   .hist-empty { color: var(--muted); font-size: .82rem; }
@@ -118,7 +130,10 @@
     <input id="mieter" placeholder="z. B. Max Mustermann">
 
     <label>Adresse des Miet-/Kaufobjekts</label>
-    <textarea id="objektAdresse" placeholder="Straße Nr., PLZ Ort" rows="2"></textarea>
+    <div class="address-wrap">
+      <input id="objektAdresse" type="text" placeholder="Straße Nr., PLZ Ort" autocomplete="off">
+      <ul id="adresseListe" class="suggest-list" role="listbox" hidden></ul>
+    </div>
 
     <div class="section-divider">Übergabe</div>
 
@@ -166,6 +181,93 @@
     const [y, m, d] = iso.split('-');
     return `${d}.${m}.${y}`;
   }
+
+  (function () {
+    const input = $('objektAdresse');
+    const list = $('adresseListe');
+    if (!input || !list) return;
+    input.setAttribute('role', 'combobox');
+    input.setAttribute('aria-autocomplete', 'list');
+    input.setAttribute('aria-expanded', 'false');
+
+    let debounceTimer, controller, activeIndex = -1, currentItems = [];
+
+    function formatFeature(p) {
+      const streetPart = [p.street, p.housenumber].filter(Boolean).join(' ');
+      const line1 = streetPart || p.name || '';
+      const cityPart = [p.postcode, p.city || p.district].filter(Boolean).join(' ');
+      return [line1, cityPart].filter(Boolean).join(', ');
+    }
+
+    function closeList() {
+      list.hidden = true;
+      list.innerHTML = '';
+      input.setAttribute('aria-expanded', 'false');
+      activeIndex = -1;
+      currentItems = [];
+    }
+
+    function renderList(features) {
+      currentItems = features;
+      if (!features.length) { closeList(); return; }
+      list.innerHTML = features.map((f, i) =>
+        `<li class="suggest-item" role="option" id="sugg-${i}" aria-selected="false">${formatFeature(f.properties)}</li>`
+      ).join('');
+      list.hidden = false;
+      input.setAttribute('aria-expanded', 'true');
+      activeIndex = -1;
+    }
+
+    function selectItem(i) {
+      const f = currentItems[i];
+      if (!f) return;
+      input.value = formatFeature(f.properties);
+      closeList();
+    }
+
+    input.addEventListener('input', () => {
+      const q = input.value.trim();
+      clearTimeout(debounceTimer);
+      if (q.length < 4) { closeList(); return; }
+      debounceTimer = setTimeout(() => {
+        if (controller) controller.abort();
+        controller = new AbortController();
+        const url = 'https://photon.komoot.io/api/?q=' + encodeURIComponent(q) + '&limit=5&lang=de&lat=48.66&lon=8.34';
+        fetch(url, { signal: controller.signal })
+          .then(res => res.json())
+          .then(data => renderList(data.features || []))
+          .catch(err => { if (err.name !== 'AbortError') closeList(); });
+      }, 300);
+    });
+
+    list.addEventListener('mousedown', (e) => {
+      const li = e.target.closest('.suggest-item');
+      if (!li) return;
+      e.preventDefault();
+      selectItem(Array.from(list.children).indexOf(li));
+    });
+
+    input.addEventListener('keydown', (e) => {
+      if (list.hidden) return;
+      if (e.key === 'ArrowDown') {
+        e.preventDefault();
+        activeIndex = Math.min(activeIndex + 1, currentItems.length - 1);
+        Array.from(list.children).forEach((li, i) => li.setAttribute('aria-selected', i === activeIndex ? 'true' : 'false'));
+      } else if (e.key === 'ArrowUp') {
+        e.preventDefault();
+        activeIndex = Math.max(activeIndex - 1, 0);
+        Array.from(list.children).forEach((li, i) => li.setAttribute('aria-selected', i === activeIndex ? 'true' : 'false'));
+      } else if (e.key === 'Enter') {
+        if (activeIndex >= 0) { e.preventDefault(); selectItem(activeIndex); }
+      } else if (e.key === 'Escape') {
+        closeList();
+      }
+    });
+
+    document.addEventListener('click', (e) => {
+      if (!e.target.closest('.address-wrap')) closeList();
+    });
+  })();
 
   function collectFormData() {
     return {
@@ -219,7 +321,6 @@
 
     $('doc').innerHTML = `
       <h2 class="doctitle">Übergabeprotokoll</h2>
-      <div class="brand">Immo-Service Schneider · Simon-Bruder-Straße 1 · 77767 Appenweier</div>
 
       <div class="meta">
         <p><strong>Name der/des Mieter(s)/Käufer(s):</strong> ${mieter}</p>
