@@ -151,9 +151,6 @@
       </div>
     </div>
 
-    <label>Zeuge (optional)</label>
-    <input id="zeuge" placeholder="Name des Zeugen">
-
     <button id="btnGenerate">Vorschau erzeugen</button>
     <button class="secondary" id="btnSave">In Historie speichern</button>
     <button class="secondary" id="btnPrint">Drucken / Als PDF speichern</button>
@@ -276,8 +273,7 @@
       objektAdresse: $('objektAdresse').value.trim(),
       datum: $('datum').value,
       vonUhr: $('vonUhr').value,
-      bisUhr: $('bisUhr').value,
-      zeuge: $('zeuge').value.trim()
+      bisUhr: $('bisUhr').value
     };
   }
 
@@ -288,7 +284,6 @@
     $('datum').value = data.datum || '';
     $('vonUhr').value = data.vonUhr || '';
     $('bisUhr').value = data.bisUhr || '';
-    $('zeuge').value = data.zeuge || '';
   }
 
   const raeume = ['Flur / Diele', 'Bad / WC', 'WC', 'Wohnzimmer', 'Schlafzimmer', 'Zimmer 3', 'Zimmer 4', 'Balkon', 'Keller', 'Garage / Carport', 'Küche', 'Sonstige'];
@@ -358,11 +353,6 @@
           <tr><th>Schlüsselart</th><th>Anzahl</th><th>Fehlt noch / Anmerkungen</th></tr>
           ${schluesselRows}
         </table>
-      </div>
-
-      <div class="sec">
-        <p><strong>Datum der letzten Renovierungsarbeiten:</strong> _____________________</p>
-        ${data.zeuge ? `<p><strong>Zeuge(n):</strong> ${data.zeuge}</p>` : `<p><strong>Zeuge(n):</strong> _____________________</p>`}
       </div>
 
       <div class="sig-row">
